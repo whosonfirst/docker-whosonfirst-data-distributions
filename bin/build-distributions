@@ -1,0 +1,108 @@
+#!/bin/sh
+# -*-sh-*-
+
+ORG="whosonfirst-data"
+PREFIX=""
+EXCLUDE=""
+
+S3_BUCKET="NEEDS-CLI-FLAG"
+S3_PREFIX="NEEDS-CLI-FLAG"
+S3_REGION="NEEDS-CLI-FLAG"
+S3_CREDENTIALS="NEEDS-CLI-FLAG"
+
+DIST_NAME="NEEDS-CLI-FLAG"
+DIST_ROOT_URL="NEEDS-CLI-FLAG"
+DIST_BLURB="NEEDS-CLI-FLAG"
+
+GETOPT=`which getopt`
+
+USAGE=""
+SESSION=""
+REPOS=""
+
+ARGS=`${GETOPT} p:o:e:r:c:h $*`
+set -- $ARGS
+
+for i; do
+    case "$i" in
+        -h  ) 
+	    USAGE=1
+	    shift; shift;;
+        -c  ) 
+	    S3_CREDENTIALS=$2
+	    shift; shift;;	
+	-p  )
+	    PREFIX=$2
+	    shift; shift ;;
+	-e  )
+	    EXCLUDE=$2
+	    shift; shift ;;	
+	-o  )
+	    ORG=$2
+	    shift; shift ;;
+	-d  )
+	    PUBLISHER_DSN=$2
+	    shift; shift ;;
+	-r  )
+	    REPOS=$2
+	    shift; shift ;;		
+	--  ) shift; break ;;
+    esac
+done
+
+if [ "${USAGE}" = "1" ]
+then
+    echo "usage: build-distributions.sh"
+    echo "options:"
+    echo "...please write me"
+    exit 0
+fi
+
+PUBLISHER_DSN="bucket=${S3_BUCKET} prefix=${S3_PREFIX} region=${S3_REGION} credentials=${S3_CREDENTIALS}"
+
+DATA="/usr/local/data"
+DIST="${DATA}/dist"
+
+BIN="/usr/local/bin"
+
+if [ "${REPOS}" = "" ]
+then
+
+    if [ "${PREFIX}" = "" ]
+    then
+	echo "Missing prefix"
+	exit 1
+    fi
+    
+    if [ "${EXCLUDE}" = "" ]
+    then
+	REPOS=`${BIN}/wof-list-repos -org ${ORG} -prefix ${PREFIX}`   
+    else
+	REPOS=`${BIN}/wof-list-repos -org ${ORG} -prefix ${PREFIX} -exclude ${EXCLUDE}`
+    fi
+fi
+
+if [ "${REPOS}" = "" ]
+then
+    echo "Nothing to build"
+    exit 1
+fi
+
+echo "building distributions for ${REPOS}"
+
+echo "--"
+
+${BIN}/wof-dist-build -verbose -timings -custom-repo -workdir ${DIST} -git-organization ${ORG} ${REPOS}
+
+echo "--"
+
+
+${BIN}/wof-dist-publish -custom-repo -publisher-dsn "${PUBLISHER_DSN}" -workdir ${DIST} ${REPOS}
+
+echo "--"
+
+${BIN}/wof-dist-index -distribution-name "${DIST_NAME}" -distribution-root-url ${DIST_ROOT_URL} -distribution-blurb "${DIST_BLURB}" -publisher-dsn "${PUBLISHER_DSN}" ${ORG}
+
+echo "--"
+
+exit 0
