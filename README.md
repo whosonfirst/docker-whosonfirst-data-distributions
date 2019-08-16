@@ -12,11 +12,43 @@ You will need to make sure you have a role with the following (default) AWS poli
 
 In addition you will need the following custom policies:
 
-* TBD...
+In addition you will need the following custom policies:
+
+Something that allows you to read/write to S3, for example:
+
+```
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": [
+                "s3:ListBucket"
+            ],
+            "Effect": "Allow",
+            "Resource": [
+                "arn:aws:s3:::dist.whosonfirst.org"
+            ]
+        },
+        {
+            "Action": [
+                "s3:ListBucket",
+                "s3:PutObject",
+                "s3:PutObjectAcl",
+                "s3:DeleteObject",
+                "s3:GetObject"
+            ],
+            "Effect": "Allow",
+            "Resource": [
+                "arn:aws:s3:::dist.whosonfirst.org/*"
+            ]
+        }
+    ]
+}
+```
 
 ### Security groups
 
-Create a new `whosonfirst-data-indexing` security and disallow _all_ inbound ports.
+Create a new `whosonfirst-data-indexing` security and disallow _all_ inbound ports. Do we really need all inbound ports? No, so this should be locked down.
 
 ## Lambda
 

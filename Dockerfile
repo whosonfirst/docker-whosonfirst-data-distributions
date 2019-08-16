@@ -29,7 +29,10 @@ FROM alpine
 RUN mkdir -p /usr/local/data/dist
 
 RUN apk update && apk upgrade \
-    && apk add git
+    && apk add git py-pip \
+    #
+    && pip install awscli
+    
 
 COPY --from=gotools /usr/local/bin/wof-clone-repos /usr/local/bin/wof-clone-repos
 COPY --from=gotools /usr/local/bin/wof-list-repos /usr/local/bin/wof-list-repos
@@ -38,3 +41,4 @@ COPY --from=gotools /usr/local/bin/wof-dist-index /usr/local/bin/wof-dist-index
 COPY --from=gotools /usr/local/bin/wof-dist-publish /usr/local/bin/wof-dist-publish
 
 COPY bin/wof-test-distributions /usr/local/bin/
+COPY bin/wof-test-permissions /usr/local/bin/

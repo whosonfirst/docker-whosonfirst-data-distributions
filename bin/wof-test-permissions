@@ -1,0 +1,36 @@
+#!/bin/sh
+
+# A dumb little tool to test network access for S3 resources.
+# In the future it might be more sophisticated but right now it just
+# does some stuff and spits to results to STDOUT for validation by
+# a human.
+
+GETOPT=`which getopt`
+
+USAGE=""
+
+ARGS=`${GETOPT} e:h $*`
+set -- $ARGS
+
+for i; do
+    case "$i" in
+        -h  ) 
+	      USAGE=1
+	      shift; shift;;
+	--  ) shift; break ;;
+    esac
+done
+
+if [ "${USAGE}" = "1" ]
+then
+    echo "usage: ./wof-test-permissions {OPTIONS}"
+    echo "options:"
+    echo "...please write me"
+    exit 0
+fi
+
+echo "# test S3"
+
+aws s3 ls s3://dist.whosonfirst.org/
+
+exit 0
