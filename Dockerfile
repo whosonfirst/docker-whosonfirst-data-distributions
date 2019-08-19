@@ -40,5 +40,6 @@ COPY --from=gotools /usr/local/bin/wof-dist-build /usr/local/bin/wof-dist-build
 COPY --from=gotools /usr/local/bin/wof-dist-index /usr/local/bin/wof-dist-index
 COPY --from=gotools /usr/local/bin/wof-dist-publish /usr/local/bin/wof-dist-publish
 
-COPY bin/wof-test-distributions /usr/local/bin/
 COPY bin/wof-test-permissions /usr/local/bin/
+COPY bin/wof-build-distributions /usr/local/bin/
+COPY bin/wof-build-distributions-combined /usr/local/bin/
