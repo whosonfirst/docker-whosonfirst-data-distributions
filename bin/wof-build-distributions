@@ -4,6 +4,10 @@
 echo "Y U RUN ME YET"
 exit 1
 
+BIN="/usr/local/bin"
+DATA="/usr/local/data"
+DIST="${DATA}/dist"
+
 GITHUB_ORG="whosonfirst-data"
 GITHUB_PREFIX=""
 GITHUB_EXCLUDE=""
@@ -20,43 +24,34 @@ DIST_NAME="Who's On First"
 DIST_ROOT_URL="https://dist.whosonfirst.org/"
 DIST_BLURB="Who's On First is a gazetter of all the places. Note: As of this writing \"alt\" (or \"alternative\") files are not included in any of the distributions. If you need that data you will need to clone it directly from the https://github.com/whosonfirst-data GitHub organization."
 
-GETOPT=`which getopt`
-
 USAGE=""
 SESSION=""
 
-ARGS=`${GETOPT} p:o:e:r:c:b:R:P:h $*`
-set -- $ARGS
-
-for i; do
-    case "$i" in
-        -h  ) 
-	    USAGE=1
-	    shift; shift;;
-	-e  )
-	    GITHUB_EXCLUDE=$2
-	    shift; shift ;;	
-	-o  )
-	    GITHUB_ORG=$2
-	    shift; shift ;;
-	-R  )
-	    GITHUB_REPOS=$2
-	    shift; shift ;;
-	-P  )
-	    GITHUB_PREFIX=$2
-	    shift; shift ;;				
-	-d  )
-	    PUBLISHER_DSN=$2
-	    shift; shift ;;
+while getopts "p:o:e:r:c:b:R:P:h" opts
+do
+    case "${opt}" in
 	-b  ) S3_BUCKET=$2
-	      shift; shift ;;
-	-r  ) S3_REGION=$2
-	      shift; shift  ;;
-	-p  ) S3_PREFIX=$2
-	      shift; shift ;;
+	      ;;
 	-c  ) S3_CREDENTIALS=$2
-	      shift; shift ;;
-	--  ) shift; break ;;	
+	      ;;	
+	-d  ) PUBLISHER_DSN=$2
+	      ;;	
+	-e  ) GITHUB_EXCLUDE=$2
+	      ;;	
+        -h  ) USAGE=1
+	      ;;
+	-o  ) GITHUB_ORG=$2
+	      ;;
+	-p  ) S3_PREFIX=$2
+	      ;;	
+	-P  ) GITHUB_PREFIX=$2
+	      ;;
+	-r  ) S3_REGION=$2
+	      ;;	
+	-R  ) GITHUB_REPOS=$2
+	      ;;
+	\? ) USAGE=1
+	     break;
     esac
 done
 
@@ -68,45 +63,27 @@ then
     exit 0
 fi
 
+# please get rid of this...
 PUBLISHER_DSN="bucket=${S3_BUCKET} prefix=${S3_PREFIX} region=${S3_REGION} credentials=${S3_CREDENTIALS}"
 
-DATA="/usr/local/data"
-DIST="${DATA}/dist"
+TO_INDEX=$@
 
-BIN="/usr/local/bin"
+for REPO in $TO_INDEX
+do
+    echo "TO INDEX: '${REPO}'"
+done
 
-if [ "${GITHUB_REPOS}" = "" ]
-then
+mkdir -p ${DIST}
 
-    if [ "${GITHUB_PREFIX}" = "" ]
-    then
-	echo "Missing prefix"
-	exit 1
-    fi
-    
-    if [ "${EXCLUDE}" = "" ]
-    then
-	GITHUB_REPOS=`${BIN}/wof-list-repos -org ${GITHUB_ORG} -prefix ${GITHUB_PREFIX}`   
-    else
-	GITHUB_REPOS=`${BIN}/wof-list-repos -org ${GITHUB_ORG} -prefix ${GITHUB_PREFIX} -exclude ${GITHUB_EXCLUDE}`
-    fi
-fi
-
-if [ "${GITHUB_REPOS}" = "" ]
-then
-    echo "Nothing to build"
-    exit 1
-fi
-
-echo "building distributions for ${GITHUB_REPOS}"
+echo "building distributions for ${TO_INDEX}"
 
 echo "--"
 
-${BIN}/wof-dist-build -verbose -timings -custom-repo -workdir ${DIST} -git-organization ${GITHUB_ORG} ${GITHUB_REPOS}
+${BIN}/wof-dist-build -verbose -timings -custom-repo -workdir ${DIST} -git-organization ${GITHUB_ORG} ${TO_INDEX}
 
 echo "--"
 
-${BIN}/wof-dist-publish -custom-repo -publisher-dsn "${PUBLISHER_DSN}" -workdir ${DIST} ${GITHUB_REPOS}
+${BIN}/wof-dist-publish -custom-repo -publisher-dsn "${PUBLISHER_DSN}" -workdir ${DIST} ${TO_INDEX}
 
 echo "--"
 
