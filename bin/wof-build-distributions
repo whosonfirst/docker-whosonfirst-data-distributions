@@ -8,7 +8,7 @@ BIN="/usr/local/bin"
 DATA="/usr/local/data"
 DIST="${DATA}/dist"
 
-GITHUB_ORG="whosonfirst-data"
+GITHUB_ORGANIZATION="whosonfirst-data"
 GITHUB_PREFIX=""
 GITHUB_EXCLUDE=""
 GITHUB_REPOS=""
@@ -20,6 +20,8 @@ S3_CREDENTIALS=""
 
 COMBINED=""
 COMBINED_NAME=""
+
+DRYRUN=""
 
 # ALL OF THESE NEED CLI FLAGS
 
@@ -33,32 +35,32 @@ SESSION=""
 # https://sookocheff.com/post/bash/parsing-bash-script-arguments-with-shopts/
 # 'getopts' is your friend; 'getopt' is your weird friend
 
-echo "WOO"
-
-while getopts "b:c:d:e:N:o:p:P:r:ChR" opt
+while getopts "b:c:d:e:N:o:p:P:r:ChnR" opt
 do
     case "${opt}" in
-	b  ) S3_BUCKET=$2
+	b  ) S3_BUCKET=$OPTARG
 	      ;;
-	c  ) S3_CREDENTIALS=$2
+	c  ) S3_CREDENTIALS=$OPTARG
 	      ;;	
-	d  ) PUBLISHER_DSN=$2
+	d  ) PUBLISHER_DSN=$OPTARG
 	      ;;	
-	e  ) GITHUB_EXCLUDE=$2
+	e  ) GITHUB_EXCLUDE=$OPTAGR
 	      ;;	
         h  ) USAGE=1
+	     ;;
+	n  ) DRYRUN=1
+	     ;;	
+	o  ) GITHUB_ORGANIZATION=$OPTARG
 	      ;;
-	o  ) GITHUB_ORG=$2
-	      ;;
-	p  ) S3_PREFIX=$2
+	p  ) S3_PREFIX=$OPTARG
 	      ;;	
-	P  ) GITHUB_PREFIX=$2
+	P  ) GITHUB_PREFIX=$OPTARG
 	      ;;
-	r  ) S3_REGION=$2
+	r  ) S3_REGION=$OPTARG
 	      ;;
 	C  ) COMBINED=1
 	      ;;
-	N  ) COMBINED_NAME=$2
+	N  ) COMBINED_NAME=$OPTARG
 	      ;;
 	R  ) GITHUB_REPOS=1
 	      ;;
@@ -67,6 +69,8 @@ do
     esac
 done
 
+shift $((OPTIND -1))
+
 if [ "${USAGE}" = "1" ]
 then
     echo "usage: build-distributions.sh"
@@ -74,8 +78,6 @@ then
     echo "...please write me"
     exit 0
 fi
-
-exit 1
 
 if [ "${COMBINED}" = "1" ]
 then
@@ -96,14 +98,17 @@ TO_INDEX=$@
 
 if [ "${GITHUB_REPOS}" = "1" ]
 then
-    TO_INDEX=`bin/wof-list-repos -organization ${GITHUB_ORGANIZATION} -prefix ${GITHUB_PREFIX}`
+
+    echo ${BIN}/wof-list-repos -org ${GITHUB_ORGANIZATION} -prefix ${GITHUB_PREFIX}
+    # TO_INDEX=`${BIN}/wof-list-repos -org ${GITHUB_ORGANIZATION} -prefix ${GITHUB_PREFIX}`
 
     if [ $? -ne 0 ]
     then
 	echo "Failed to list repos."
 	exit 1
     fi
-    
+
+    echo "TO INDEX ${TO_INDEX}"
 fi
 
 for REPO in $TO_INDEX
@@ -121,9 +126,9 @@ echo "--"
 
 if [ "${COMBINED}" = "1" ]
 then
-    ${BIN}/wof-dist-build -verbose -timings -custom-repo -workdir ${DIST} -git-organization ${GITHUB_ORG} -combined -combined-name ${COMBINED_NAME} ${TO_INDEX}
+    echo ${BIN}/wof-dist-build -verbose -timings -custom-repo -workdir ${DIST} -git-organization ${GITHUB_ORGANIZATION} -combined -combined-name ${COMBINED_NAME} ${TO_INDEX}
 else
-    ${BIN}/wof-dist-build -verbose -timings -custom-repo -workdir ${DIST} -git-organization ${GITHUB_ORG} ${TO_INDEX}
+    echo ${BIN}/wof-dist-build -verbose -timings -custom-repo -workdir ${DIST} -git-organization ${GITHUB_ORGANIZATION} ${TO_INDEX}
 fi
 
 if [ $? -ne 0 ]
@@ -134,11 +139,11 @@ fi
 
 echo "--"
 
-${BIN}/wof-dist-publish -custom-repo -publisher-dsn "${PUBLISHER_DSN}" -workdir ${DIST} ${TO_INDEX}
+echo ${BIN}/wof-dist-publish -custom-repo -publisher-dsn "${PUBLISHER_DSN}" -workdir ${DIST} ${TO_INDEX}
 
 echo "--"
 
-${BIN}/wof-dist-index -distribution-name "${DIST_NAME}" -distribution-root-url ${DIST_ROOT_URL} -distribution-blurb "${DIST_BLURB}" -publisher-dsn "${PUBLISHER_DSN}" ${ORG}
+echo ${BIN}/wof-dist-index -distribution-name "${DIST_NAME}" -distribution-root-url ${DIST_ROOT_URL} -distribution-blurb "${DIST_BLURB}" -publisher-dsn "${PUBLISHER_DSN}" ${ORG}
 
 echo "--"
 
