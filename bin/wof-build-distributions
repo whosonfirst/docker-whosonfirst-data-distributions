@@ -10,7 +10,6 @@ DIST="${DATA}/dist"
 
 GITHUB_ORGANIZATION="whosonfirst-data"
 GITHUB_PREFIX=""
-GITHUB_EXCLUDE=""
 GITHUB_REPOS=""
 
 S3_BUCKET=""
@@ -23,10 +22,10 @@ COMBINED_NAME=""
 
 DRYRUN=""
 
-WOF_LIST_REPOS=`which wof-list-repos`
-WOF_DIST_BUILD`which wof-dist-build`
-WOF_DIST_PUBLISH=`which wof-dist-publish`
-WOF_DIST_INDEX=`which wof-dist-index`
+WOF_LIST_REPOS="${BIN}/wof-list-repos"
+WOF_DIST_BUILD="${BIN}/wof-dist-build"
+WOF_DIST_PUBLISH="${BIN}/wof-dist-publish"
+WOF_DIST_INDEX="${BIN}/wof-dist-index"
 
 # ALL OF THESE NEED CLI FLAGS
 
@@ -42,7 +41,7 @@ LOCAL=""
 # https://sookocheff.com/post/bash/parsing-bash-script-arguments-with-shopts/
 # 'getopts' is your friend; 'getopt' is your weird friend
 
-while getopts "b:c:d:e:N:o:p:P:r:CDhnR" opt
+while getopts "b:c:d:N:o:p:P:r:CDhnR" opt
 do
     case "${opt}" in
 	b  ) S3_BUCKET=$OPTARG
@@ -50,8 +49,6 @@ do
 	c  ) S3_CREDENTIALS=$OPTARG
 	      ;;	
 	d  ) PUBLISHER_DSN=$OPTARG
-	      ;;	
-	e  ) GITHUB_EXCLUDE=$OPTAGR
 	      ;;	
         h  ) USAGE=1
 	     ;;
@@ -84,7 +81,18 @@ if [ "${USAGE}" = "1" ]
 then
     echo "usage: build-distributions.sh"
     echo "options:"
-    echo "...please write me"
+    echo "-b The name of the S3 bucket to publish distributions to. THIS FLAG WILL BE DEPRECATED SOON."
+    echo "-c The S3 credentials to use for publishing distributions. THIS FLAG WILL BE DEPRECATED SOON."
+    echo "-d A valid go-whosonfirst-dist-publish publisher DSN string. THIS FLAG WILL BE DEPRECATED SOON."
+    echo "-h Print this message."
+    echo "-o A valid GitHub organization name."
+    echo "-p A valid prefix for the -b (S3 bucket) flag. THIS FLAG WILL BE DEPRECATED SOON."
+    echo "-P A prefix to filter GitHub repositories with."
+    echo "-r The region of the S3 bucket for publishing distributions. THIS FLAG WILL BE DEPRECATED SOON."
+    echo "-C Build a 'combined' distribution containing two or more repositories."
+    echo "-D Assume local development (as in not a Docker container) and look for WOF related code in /usr/local/whosonfirst."
+    echo "-N The name of a 'combined' distribution."
+    echo "-R Fetch the list of repositories to build using the wof-list-repos tool."
     exit 0
 fi
 
@@ -128,7 +136,7 @@ fi
 
 for REPO in $TO_INDEX
 do
-    echo "TO INDEX: '${REPO}'"
+    echo "Distributions to build: '${REPO}'"
 done
 
 mkdir -p ${DIST}

@@ -29,7 +29,7 @@ FROM alpine
 RUN mkdir -p /usr/local/data/dist
 
 RUN apk update && apk upgrade \
-    && apk add git py-pip \
+    && apk add git py-pip ca-certificates \
     #
     && pip install awscli
     
