@@ -23,6 +23,11 @@ COMBINED_NAME=""
 
 DRYRUN=""
 
+WOF_LIST_REPOS=`which wof-list-repos`
+WOF_DIST_BUILD`which wof-dist-build`
+WOF_DIST_PUBLISH=`which wof-dist-publish`
+WOF_DIST_INDEX=`which wof-dist-index`
+
 # ALL OF THESE NEED CLI FLAGS
 
 DIST_NAME="Who's On First"
@@ -32,10 +37,12 @@ DIST_BLURB="Who's On First is a gazetter of all the places. Note: As of this wri
 USAGE=""
 SESSION=""
 
+LOCAL=""
+
 # https://sookocheff.com/post/bash/parsing-bash-script-arguments-with-shopts/
 # 'getopts' is your friend; 'getopt' is your weird friend
 
-while getopts "b:c:d:e:N:o:p:P:r:ChnR" opt
+while getopts "b:c:d:e:N:o:p:P:r:CDhnR" opt
 do
     case "${opt}" in
 	b  ) S3_BUCKET=$OPTARG
@@ -59,7 +66,9 @@ do
 	r  ) S3_REGION=$OPTARG
 	      ;;
 	C  ) COMBINED=1
-	      ;;
+	     ;;
+	D  ) DEV=1
+	     ;;
 	N  ) COMBINED_NAME=$OPTARG
 	      ;;
 	R  ) GITHUB_REPOS=1
@@ -77,6 +86,14 @@ then
     echo "options:"
     echo "...please write me"
     exit 0
+fi
+
+if [ "${DEV}" ]
+then
+    WOF_LIST_REPOS="/usr/local/whosonfirst/go-whosonfirst-github/bin/wof-list-repos"
+    WOF_DIST_BUILD="/usr/local/whosonfirst/go-whosonfirst-dist/bin/wof-dist-build"
+    WOF_DIST_PUBLISH="/usr/local/whosonfirst/go-whosonfirst-dist/bin/wof-dist-publish"
+    WOF_DIST_INDEX="/usr/local/whosonfirst/go-whosonfirst-dist/bin/wof-dist-index"
 fi
 
 if [ "${COMBINED}" = "1" ]
@@ -98,8 +115,8 @@ TO_INDEX=$@
 if [ "${GITHUB_REPOS}" = "1" ]
 then
 
-    echo ${BIN}/wof-list-repos -org ${GITHUB_ORGANIZATION} -prefix ${GITHUB_PREFIX}
-    TO_INDEX=`${BIN}/wof-list-repos -org ${GITHUB_ORGANIZATION} -prefix ${GITHUB_PREFIX}`
+    echo ${WOF_LIST_REPOS} -org ${GITHUB_ORGANIZATION} -prefix ${GITHUB_PREFIX}
+    TO_INDEX=`${WOF_LIST_REPOS} -org ${GITHUB_ORGANIZATION} -prefix ${GITHUB_PREFIX}`
 
     if [ $? -ne 0 ]
     then
@@ -124,11 +141,11 @@ echo "--"
 
 if [ "${COMBINED}" = "1" ]
 then
-    echo ${BIN}/wof-dist-build -verbose -timings -custom-repo -workdir ${DIST} -git-organization ${GITHUB_ORGANIZATION} -combined -combined-name ${COMBINED_NAME} ${TO_INDEX}
-    ${BIN}/wof-dist-build -verbose -timings -custom-repo -workdir ${DIST} -git-organization ${GITHUB_ORGANIZATION} -combined -combined-name ${COMBINED_NAME} ${TO_INDEX}    
+    echo ${WOF_DIST_BUILD} -verbose -timings -custom-repo -workdir ${DIST} -github-organization ${GITHUB_ORGANIZATION} -combined -combined-name ${COMBINED_NAME} ${TO_INDEX}
+    ${WOF_DIST_BUILD} -verbose -timings -custom-repo -workdir ${DIST} -git-organization ${GITHUB_ORGANIZATION} -combined -combined-name ${COMBINED_NAME} ${TO_INDEX}    
 else
-    echo ${BIN}/wof-dist-build -verbose -timings -custom-repo -workdir ${DIST} -git-organization ${GITHUB_ORGANIZATION} ${TO_INDEX}
-    ${BIN}/wof-dist-build -verbose -timings -custom-repo -workdir ${DIST} -git-organization ${GITHUB_ORGANIZATION} ${TO_INDEX}    
+    echo ${WOF_DIST_BUILD} -verbose -timings -custom-repo -workdir ${DIST} -git-organization ${GITHUB_ORGANIZATION} ${TO_INDEX}
+    ${WOF_DIST_BUILD} -verbose -timings -custom-repo -workdir ${DIST} -git-organization ${GITHUB_ORGANIZATION} ${TO_INDEX}    
 fi
 
 if [ $? -ne 0 ]
@@ -145,13 +162,13 @@ fi
 
 echo "--"
 
-echo ${BIN}/wof-dist-publish -custom-repo -publisher-dsn "${PUBLISHER_DSN}" -workdir ${DIST} ${TO_INDEX}
-${BIN}/wof-dist-publish -custom-repo -publisher-dsn "${PUBLISHER_DSN}" -workdir ${DIST} ${TO_INDEX}
+echo ${WOF_DIST_PUBLISH} -custom-repo -publisher-dsn "${PUBLISHER_DSN}" -workdir ${DIST} ${TO_INDEX}
+${WOF_DIST_PUBLISH} -custom-repo -publisher-dsn "${PUBLISHER_DSN}" -workdir ${DIST} ${TO_INDEX}
 
 echo "--"
 
-echo ${BIN}/wof-dist-index -distribution-name "${DIST_NAME}" -distribution-root-url ${DIST_ROOT_URL} -distribution-blurb "${DIST_BLURB}" -publisher-dsn "${PUBLISHER_DSN}" ${ORG}
-${BIN}/wof-dist-index -distribution-name "${DIST_NAME}" -distribution-root-url ${DIST_ROOT_URL} -distribution-blurb "${DIST_BLURB}" -publisher-dsn "${PUBLISHER_DSN}" ${ORG}
+echo ${WOF_DIST_INDEX} -distribution-name "${DIST_NAME}" -distribution-root-url ${DIST_ROOT_URL} -distribution-blurb "${DIST_BLURB}" -publisher-dsn "${PUBLISHER_DSN}" ${ORG}
+${WOF_DIST_INDEX} -distribution-name "${DIST_NAME}" -distribution-root-url ${DIST_ROOT_URL} -distribution-blurb "${DIST_BLURB}" -publisher-dsn "${PUBLISHER_DSN}" ${ORG}
 
 echo "--"
 
