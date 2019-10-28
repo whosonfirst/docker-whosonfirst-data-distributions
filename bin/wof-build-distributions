@@ -88,8 +88,7 @@ then
 	fi		
 fi
 
-# please get rid of this...
-# also this will eventually be replace by Go Cloud blob/bucket URIs
+# please get rid of this: also this will eventually be replace by Go Cloud blob/bucket URIs
 # (https://github.com/whosonfirst/go-whosonfirst-dist-publish/issues/2)
 
 PUBLISHER_DSN="bucket=${S3_BUCKET} prefix=${S3_PREFIX} region=${S3_REGION} credentials=${S3_CREDENTIALS}"
@@ -100,7 +99,7 @@ if [ "${GITHUB_REPOS}" = "1" ]
 then
 
     echo ${BIN}/wof-list-repos -org ${GITHUB_ORGANIZATION} -prefix ${GITHUB_PREFIX}
-    # TO_INDEX=`${BIN}/wof-list-repos -org ${GITHUB_ORGANIZATION} -prefix ${GITHUB_PREFIX}`
+    TO_INDEX=`${BIN}/wof-list-repos -org ${GITHUB_ORGANIZATION} -prefix ${GITHUB_PREFIX}`
 
     if [ $? -ne 0 ]
     then
@@ -108,7 +107,6 @@ then
 	exit 1
     fi
 
-    echo "TO INDEX ${TO_INDEX}"
 fi
 
 for REPO in $TO_INDEX
@@ -127,8 +125,10 @@ echo "--"
 if [ "${COMBINED}" = "1" ]
 then
     echo ${BIN}/wof-dist-build -verbose -timings -custom-repo -workdir ${DIST} -git-organization ${GITHUB_ORGANIZATION} -combined -combined-name ${COMBINED_NAME} ${TO_INDEX}
+    ${BIN}/wof-dist-build -verbose -timings -custom-repo -workdir ${DIST} -git-organization ${GITHUB_ORGANIZATION} -combined -combined-name ${COMBINED_NAME} ${TO_INDEX}    
 else
     echo ${BIN}/wof-dist-build -verbose -timings -custom-repo -workdir ${DIST} -git-organization ${GITHUB_ORGANIZATION} ${TO_INDEX}
+    ${BIN}/wof-dist-build -verbose -timings -custom-repo -workdir ${DIST} -git-organization ${GITHUB_ORGANIZATION} ${TO_INDEX}    
 fi
 
 if [ $? -ne 0 ]
@@ -137,13 +137,21 @@ then
     exit 1
 fi
 
+if [ "${DRYRUN}" = "1" ]
+then
+    ls -al ${DIST}
+    exit 0
+fi
+
 echo "--"
 
 echo ${BIN}/wof-dist-publish -custom-repo -publisher-dsn "${PUBLISHER_DSN}" -workdir ${DIST} ${TO_INDEX}
+${BIN}/wof-dist-publish -custom-repo -publisher-dsn "${PUBLISHER_DSN}" -workdir ${DIST} ${TO_INDEX}
 
 echo "--"
 
 echo ${BIN}/wof-dist-index -distribution-name "${DIST_NAME}" -distribution-root-url ${DIST_ROOT_URL} -distribution-blurb "${DIST_BLURB}" -publisher-dsn "${PUBLISHER_DSN}" ${ORG}
+${BIN}/wof-dist-index -distribution-name "${DIST_NAME}" -distribution-root-url ${DIST_ROOT_URL} -distribution-blurb "${DIST_BLURB}" -publisher-dsn "${PUBLISHER_DSN}" ${ORG}
 
 echo "--"
 
