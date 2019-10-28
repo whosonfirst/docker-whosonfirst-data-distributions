@@ -20,6 +20,7 @@ options:
 -D Assume local development (as in not a Docker container) and look for WOF related code in /usr/local/whosonfirst.
 -N The name of a 'combined' distribution.
 -R Fetch the list of repositories to build using the wof-list-repos tool.
+-S A Unix timestamp or ISO8601 duration string to filter GitHub repositories with (include only repositories update since).
 ```
 
 Soon (no ETA yet) all of the S3 and publisher related flags above will be replace by a single `-B` (or "bucket") flag that will contain any valid [Go Cloud blob/bucket](https://gocloud.dev/howto/blob/) URI.
@@ -131,6 +132,14 @@ drwxr-xr-x    1 root     root          4096 Aug 10 22:00 ..
 -rw-r--r--    1 root     root      31622053 Oct 28 18:22 y-combined-latest.db.bz2
 ```
 
+### Multiple repos, wildcard and combined with a time (repo updated since) filter
+
+```
+$> docker run whosonfirst-data-distributions /usr/local/bin/wof-build-distributions -n -C -N foo -R -P whosonfirst-data-postalcode -S P14D
+/usr/local/bin/wof-list-repos -org whosonfirst-data -prefix whosonfirst-data-postalcode -updated-since P14D
+Nothing to build a distribution from.
+```
+
 ## AWS
 
 ### Roles
@@ -177,7 +186,7 @@ Something that allows you to read/write to S3, for example:
 
 ### Security groups
 
-Create a new `whosonfirst-data-indexing` security and disallow _all_ inbound ports. Do we really need all inbound ports? No, so this should be locked down.
+Create a new `whosonfirst-data-distributions` security group and disallow _all_ inbound ports. Do we really need all inbound ports? No, so this should be locked down.
 
 ## Lambda
 
@@ -188,13 +197,15 @@ Create a new `whosonfirst-data-indexing` security and disallow _all_ inbound por
 | Key | Value |
 | --- | --- |
 | WEBHOOKD_MODE | `lambda` |
-| WEBHOOKD_COMMAND | `/usr/local/bin/wof-test-distributions %s` |
+| WEBHOOKD_COMMAND | `/usr/local/bin/wof-build-distributions -n %s` |
 | WEBHOOKD_ECS_CLUSTER | `whosonfirst` |
 | WEBHOOKD_ECS_CONTAINER | `whosonfirst-data-distributions` |
 | WEBHOOKD_ECS_DSN | `credentials=iam: region={AWS_REGION}` |
 | WEBHOOKD_ECS_SECURITY_GROUP | `{EC2_SECURITY_GROUP}` |
 | WEBHOOKD_ECS_SUBNET | `{AWS_SUBNET1},{AWS_SUBNET2}...` |
-| WEBHOOKD_ECS_TASK | `whosonfirst-data-indexing:{N}` |
+| WEBHOOKD_ECS_TASK | `whosonfirst-data-distributions:{N}` |
+
+_Important: See the way I am passing the `-n` (or "dryrun") flag above? That's because I am still testing things..._
 
 ## See also
 

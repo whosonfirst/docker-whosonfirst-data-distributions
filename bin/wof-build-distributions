@@ -1,9 +1,6 @@
 #!/bin/sh
 # -*-sh-*-
 
-# echo "Y U RUN ME YET"
-# exit 1
-
 BIN="/usr/local/bin"
 DATA="/usr/local/data"
 DIST="${DATA}/dist"
@@ -11,6 +8,7 @@ DIST="${DATA}/dist"
 GITHUB_ORGANIZATION="whosonfirst-data"
 GITHUB_PREFIX=""
 GITHUB_REPOS=""
+GITHUB_SINCE=""
 
 S3_BUCKET=""
 S3_PREFIX=""
@@ -41,7 +39,7 @@ LOCAL=""
 # https://sookocheff.com/post/bash/parsing-bash-script-arguments-with-shopts/
 # 'getopts' is your friend; 'getopt' is your weird friend
 
-while getopts "b:c:d:N:o:p:P:r:CDhnR" opt
+while getopts "b:c:d:N:o:p:P:r:S:CDhnR" opt
 do
     case "${opt}" in
 	b  ) S3_BUCKET=$OPTARG
@@ -69,7 +67,9 @@ do
 	N  ) COMBINED_NAME=$OPTARG
 	      ;;
 	R  ) GITHUB_REPOS=1
-	      ;;
+	     ;;
+	S  ) GITHUB_SINCE=$OPTARG
+	     ;;
 	\? ) USAGE=1
 	     break;
     esac
@@ -93,6 +93,7 @@ then
     echo "-D Assume local development (as in not a Docker container) and look for WOF related code in /usr/local/whosonfirst."
     echo "-N The name of a 'combined' distribution."
     echo "-R Fetch the list of repositories to build using the wof-list-repos tool."
+    echo "-S A Unix timestamp or ISO8601 duration string to filter GitHub repositories with (include only repositories update since)."
     exit 0
 fi
 
@@ -123,8 +124,8 @@ TO_INDEX=$@
 if [ "${GITHUB_REPOS}" = "1" ]
 then
 
-    echo ${WOF_LIST_REPOS} -org ${GITHUB_ORGANIZATION} -prefix ${GITHUB_PREFIX}
-    TO_INDEX=`${WOF_LIST_REPOS} -org ${GITHUB_ORGANIZATION} -prefix ${GITHUB_PREFIX}`
+    echo ${WOF_LIST_REPOS} -org ${GITHUB_ORGANIZATION} -prefix ${GITHUB_PREFIX} -updated-since ${GITHUB_SINCE}
+    TO_INDEX=`${WOF_LIST_REPOS} -org ${GITHUB_ORGANIZATION} -prefix ${GITHUB_PREFIX} -updated-since ${GITHUB_SINCE}`
 
     if [ $? -ne 0 ]
     then
@@ -132,6 +133,12 @@ then
 	exit 1
     fi
 
+fi
+
+if [ "${TO_INDEX}" = "" ]
+then
+    echo "Nothing to build a distribution from."
+    exit 0
 fi
 
 for REPO in $TO_INDEX
