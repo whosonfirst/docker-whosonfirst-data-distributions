@@ -1,8 +1,8 @@
 #!/bin/sh
 # -*-sh-*-
 
-echo "Y U RUN ME YET"
-exit 1
+# echo "Y U RUN ME YET"
+# exit 1
 
 BIN="/usr/local/bin"
 DATA="/usr/local/data"
@@ -18,6 +18,9 @@ S3_PREFIX=""
 S3_REGION=""
 S3_CREDENTIALS=""
 
+COMBINED=""
+COMBINED_NAME=""
+
 # ALL OF THESE NEED CLI FLAGS
 
 DIST_NAME="Who's On First"
@@ -27,28 +30,37 @@ DIST_BLURB="Who's On First is a gazetter of all the places. Note: As of this wri
 USAGE=""
 SESSION=""
 
-while getopts "p:o:e:r:c:b:R:P:h" opts
+# https://sookocheff.com/post/bash/parsing-bash-script-arguments-with-shopts/
+# 'getopts' is your friend; 'getopt' is your weird friend
+
+echo "WOO"
+
+while getopts "b:c:d:e:N:o:p:P:r:ChR" opt
 do
     case "${opt}" in
-	-b  ) S3_BUCKET=$2
+	b  ) S3_BUCKET=$2
 	      ;;
-	-c  ) S3_CREDENTIALS=$2
+	c  ) S3_CREDENTIALS=$2
 	      ;;	
-	-d  ) PUBLISHER_DSN=$2
+	d  ) PUBLISHER_DSN=$2
 	      ;;	
-	-e  ) GITHUB_EXCLUDE=$2
+	e  ) GITHUB_EXCLUDE=$2
 	      ;;	
-        -h  ) USAGE=1
+        h  ) USAGE=1
 	      ;;
-	-o  ) GITHUB_ORG=$2
+	o  ) GITHUB_ORG=$2
 	      ;;
-	-p  ) S3_PREFIX=$2
+	p  ) S3_PREFIX=$2
 	      ;;	
-	-P  ) GITHUB_PREFIX=$2
+	P  ) GITHUB_PREFIX=$2
 	      ;;
-	-r  ) S3_REGION=$2
-	      ;;	
-	-R  ) GITHUB_REPOS=$2
+	r  ) S3_REGION=$2
+	      ;;
+	C  ) COMBINED=1
+	      ;;
+	N  ) COMBINED_NAME=$2
+	      ;;
+	R  ) GITHUB_REPOS=1
 	      ;;
 	\? ) USAGE=1
 	     break;
@@ -63,10 +75,36 @@ then
     exit 0
 fi
 
+exit 1
+
+if [ "${COMBINED}" = "1" ]
+then
+	if [ "${COMBINED_NAME}" = "" ]
+	then	
+		echo "Missing or invalid -N (combined name) flag"
+		exit 1
+	fi		
+fi
+
 # please get rid of this...
+# also this will eventually be replace by Go Cloud blob/bucket URIs
+# (https://github.com/whosonfirst/go-whosonfirst-dist-publish/issues/2)
+
 PUBLISHER_DSN="bucket=${S3_BUCKET} prefix=${S3_PREFIX} region=${S3_REGION} credentials=${S3_CREDENTIALS}"
 
 TO_INDEX=$@
+
+if [ "${GITHUB_REPOS}" = "1" ]
+then
+    TO_INDEX=`bin/wof-list-repos -organization ${GITHUB_ORGANIZATION} -prefix ${GITHUB_PREFIX}`
+
+    if [ $? -ne 0 ]
+    then
+	echo "Failed to list repos."
+	exit 1
+    fi
+    
+fi
 
 for REPO in $TO_INDEX
 do
@@ -79,7 +117,20 @@ echo "building distributions for ${TO_INDEX}"
 
 echo "--"
 
-${BIN}/wof-dist-build -verbose -timings -custom-repo -workdir ${DIST} -git-organization ${GITHUB_ORG} ${TO_INDEX}
+# https://gist.github.com/stepps00/47a42d80b4e2cd5fee7fcf10989c284e
+
+if [ "${COMBINED}" = "1" ]
+then
+    ${BIN}/wof-dist-build -verbose -timings -custom-repo -workdir ${DIST} -git-organization ${GITHUB_ORG} -combined -combined-name ${COMBINED_NAME} ${TO_INDEX}
+else
+    ${BIN}/wof-dist-build -verbose -timings -custom-repo -workdir ${DIST} -git-organization ${GITHUB_ORG} ${TO_INDEX}
+fi
+
+if [ $? -ne 0 ]
+then
+    echo "Failed to build distributions."
+    exit 1
+fi
 
 echo "--"
 
