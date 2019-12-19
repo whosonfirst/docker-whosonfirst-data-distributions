@@ -2,6 +2,9 @@
 
 WORK IN PROGRESS.
 
+* https://github.com/whosonfirst/whosonfirst-cookbook/blob/master/how_to/building_a_single_repo_distribution.md
+* https://github.com/whosonfirst/whosonfirst-cookbook/blob/master/how_to/building_a_combined_distribution.md
+
 ## wof-build-distributions
 
 ```
