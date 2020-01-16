@@ -1,0 +1,32 @@
+#!/bin/sh
+# -*-sh-*-
+
+BIN="/usr/local/bin"
+DATA="/usr/local/data"
+DIST="${DATA}/dist"
+
+WOF_LIST_REPOS="${BIN}/wof-list-repos"
+WOF_DIST_BUILD="${BIN}/wof-dist-build"
+WOF_DIST_PUBLISH="${BIN}/wof-dist-publish"
+WOF_DIST_INDEX="${BIN}/wof-dist-index"
+
+# START OF please read me from CLI flags
+
+GITHUB_ORG="whosonfirst-data"
+GITHUB_PREFIX="whosonfirst-data-admin-"
+
+COMBINED_NAME="whosonfist-data-admin"
+WORKDIR="/usr/local/data/work"
+
+# END OF please read me from CLI flags
+
+REPOS=`${WOF_LIST_REPOS} -org ${GITHUB_ORG} -prefix ${GITHUB_PREFIX}`
+
+echo ${WOF_DIST_BUILD} -combined -combined-name ${COMBINED_NAME} \
+     	-index-alt-files \
+		  -workdir ${WORKDIR} \
+		  -git-organization ${GITHUB_ORG} \
+		  -timings -verbose \
+		  ${REPOS}
+
+# something something something publish here
